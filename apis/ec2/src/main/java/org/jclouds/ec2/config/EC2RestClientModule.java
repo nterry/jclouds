@@ -25,10 +25,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import org.jclouds.aws.config.WithZonesFormSigningRestClientModule;
+import org.jclouds.compute.reference.ComputeServiceConstants;
 import org.jclouds.ec2.EC2AsyncClient;
 import org.jclouds.ec2.EC2Client;
 import org.jclouds.ec2.domain.AvailabilityZoneInfo;
@@ -48,9 +51,11 @@ import org.jclouds.ec2.services.SecurityGroupAsyncClient;
 import org.jclouds.ec2.services.SecurityGroupClient;
 import org.jclouds.ec2.services.WindowsAsyncClient;
 import org.jclouds.ec2.services.WindowsClient;
+import org.jclouds.http.HttpResponseException;
 import org.jclouds.http.RequiresHttp;
 import org.jclouds.location.Region;
 import org.jclouds.location.Zone;
+import org.jclouds.logging.Logger;
 import org.jclouds.rest.ConfiguresRestClient;
 
 import com.google.common.base.Predicates;
@@ -137,6 +142,10 @@ public class EC2RestClientModule<S extends EC2Client, A extends EC2AsyncClient> 
       private final AvailabilityZoneAndRegionClient client;
       private final Map<String, URI> regions;
 
+      @Resource
+      @Named(ComputeServiceConstants.COMPUTE_LOGGER)
+      protected Logger logger = Logger.NULL;
+
       @Inject
       public RegionIdToZoneId(EC2Client client, @Region Map<String, URI> regions) {
          this.client = client.getAvailabilityZoneAndRegionServices();
@@ -149,8 +158,16 @@ public class EC2RestClientModule<S extends EC2Client, A extends EC2AsyncClient> 
       public Map<String, String> get() {
          Builder<String, String> map = ImmutableMap.<String, String> builder();
          for (Entry<String, URI> region : regions.entrySet()) {
-            for (AvailabilityZoneInfo zoneInfo : client.describeAvailabilityZonesInRegion(region.getKey())) {
-               map.put(zoneInfo.getZone(), region.getKey());
+            try {
+               for (AvailabilityZoneInfo zoneInfo : client.describeAvailabilityZonesInRegion(region.getKey())) {
+                  map.put(zoneInfo.getZone(), region.getKey());
+               }
+            } catch (HttpResponseException e) {
+               if (e.getMessage().contains("Unable to tunnel through proxy")) {
+                  logger.error(e, "Could not describe availability zones in Region: %s", region.getKey());
+               } else {
+                  throw e;
+               }
             }
          }
          return map.build();
