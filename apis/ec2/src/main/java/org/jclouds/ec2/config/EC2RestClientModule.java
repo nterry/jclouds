@@ -156,7 +156,8 @@ public class EC2RestClientModule<S extends EC2Client, A extends EC2AsyncClient> 
       @Zone
       @Override
       public Map<String, String> get() {
-         Builder<String, String> map = ImmutableMap.<String, String> builder();
+         Builder<String, String> map = ImmutableMap.builder();
+         HttpResponseException exception = null;
          for (Entry<String, URI> region : regions.entrySet()) {
             try {
                for (AvailabilityZoneInfo zoneInfo : client.describeAvailabilityZonesInRegion(region.getKey())) {
@@ -164,13 +165,18 @@ public class EC2RestClientModule<S extends EC2Client, A extends EC2AsyncClient> 
                }
             } catch (HttpResponseException e) {
                if (e.getMessage().contains("Unable to tunnel through proxy")) {
+                  exception = e;
                   logger.error(e, "Could not describe availability zones in Region: %s", region.getKey());
                } else {
                   throw e;
                }
             }
          }
-         return map.build();
+         ImmutableMap<String, String> result = map.build();
+         if (result.isEmpty() && exception != null) {
+            throw exception;
+         }
+         return result;
       }
 
    }
