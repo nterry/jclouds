@@ -30,6 +30,7 @@
     </parent>
     <groupId>org.jclouds.api</groupId>
     <artifactId>ec2</artifactId>
+    <version>1.1.0.besteffort</version>
     <name>jcloud ec2 api</name>
     <description>jclouds components to access an implementation of EC2</description>
     <packaging>bundle</packaging>
@@ -41,45 +42,46 @@
         <test.ec2.apiversion>2010-06-15</test.ec2.apiversion>
         <test.ec2.identity>${test.aws.identity}</test.ec2.identity>
         <test.ec2.credential>${test.aws.credential}</test.ec2.credential>
+        <jclouds-project.version>1.1.0</jclouds-project.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.jclouds.common</groupId>
             <artifactId>aws-common</artifactId>
-            <version>${project.version}</version>
+            <version>${jclouds-project.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.jclouds</groupId>
             <artifactId>jclouds-compute</artifactId>
-            <version>${project.version}</version>
+            <version>${jclouds-project.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.jclouds</groupId>
             <artifactId>jclouds-core</artifactId>
-            <version>${project.version}</version>
+            <version>${jclouds-project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jclouds</groupId>
             <artifactId>jclouds-compute</artifactId>
-            <version>${project.version}</version>
+            <version>${jclouds-project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jclouds.driver</groupId>
             <artifactId>jclouds-log4j</artifactId>
-            <version>${project.version}</version>
+            <version>${jclouds-project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jclouds.driver</groupId>
             <artifactId>jclouds-sshj</artifactId>
-            <version>${project.version}</version>
+            <version>${jclouds-project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -140,9 +142,26 @@
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Export-Package>org.jclouds.ec2.*;version="${project.version}"</Export-Package>
-                        <Import-Package>org.jclouds.*;version="${project.version}",*</Import-Package>
+                        <Import-Package>org.jclouds.*;version="${jclouds-project.version}",*</Import-Package>
                     </instructions>
                 </configuration>
+            </plugin>
+            <plugin>      
+                <artifactId>maven-remote-resources-plugin</artifactId>
+                <version>1.2</version>
+                <executions>             
+                    <execution>
+                        <id>process-remote-resources</id>
+                        <goals>
+                            <goal>process</goal>
+                        </goals>
+                        <configuration>
+                            <resourceBundles>
+                                <resourceBundle>org.jclouds:jclouds-resources:${jclouds-project.version}</resourceBundle>
+                            </resourceBundles>
+                        </configuration>
+                    </execution>          
+                </executions>
             </plugin>
         </plugins>
     </build>
